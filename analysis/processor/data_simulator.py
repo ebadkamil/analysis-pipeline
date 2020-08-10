@@ -10,6 +10,7 @@ import time
 import multiprocessing as mp
 import queue
 
+from scipy import ndimage as ndi
 import numpy as np
 
 
@@ -26,15 +27,26 @@ class DataSimulator(mp.Process):
 
         while self._running:
             shape = self._data_shape \
-                if self._data_shape is not None else (10, 1024, 1024)
+                if self._data_shape is not None else (2, 1024, 1024)
 
-            # Random image data emulating rings
+            choices = ["circles", "squares"]
+            choice = np.random.choice(choices)
             background =  2. * np.random.rand(*shape)
-            x = np.linspace(-1, 1, shape[-2])
-            y = np.linspace(-1, 1, shape[-1])
-            xx, yy = np.meshgrid(x, y)
-            z = 10. * np.sin(
-                np.random.randint(1, 20) * np.pi * (xx**2 + yy**2))
+            if choice == "circles":
+                # Random image data emulating rings
+                x = np.linspace(-1, 1, shape[-2])
+                y = np.linspace(-1, 1, shape[-1])
+                xx, yy = np.meshgrid(x, y)
+                z = 10. * np.sin(
+                    np.random.randint(1, 20) * np.pi * (xx**2 + yy**2))
+            else:
+                z = np.zeros(shape[1:])
+                x = np.random.randint(0, 512)
+                z[x:-x, x:-x] = 10.
+
+                z = ndi.rotate(
+                    z, np.random.randint(10, 45),
+                    mode='constant', reshape=False)
 
             data = {'image': background + z}
             meta = {'timestamp': datetime.now().strftime(
