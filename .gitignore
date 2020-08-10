@@ -1,0 +1,7 @@
+.*
+*.egg-*
+__pycache__
+thirdparty/bin
+pkg
+!.gitignore
+
