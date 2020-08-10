@@ -17,9 +17,8 @@ import subprocess
 
 import redis
 
-from .processor import DataSimulator
-from .processor import DataProcessor
-from .zmq_streamer import DataStreamer
+from .processor import DataProcessor, DataSimulator
+from .zmq_streamer import DataClient, DataStreamer
 
 
 def start_redis_server(host='127.0.0.1', port=6379, *, password=None):
@@ -82,7 +81,7 @@ class Application:
                 continue
 
 
-def start_application():
+def start_pipeline():
     parser = argparse.ArgumentParser(prog="extra analysis")
     parser.add_argument("hostname", type=str, help="hostname")
     parser.add_argument('port', type=int, help="port")
@@ -99,5 +98,22 @@ def start_application():
     app.start_app()
 
 
+def start_test_client():
+    import matplotlib.pyplot as plt
+
+    client = DataClient("tcp://127.0.0.1:54055")
+    fig, ax = plt.subplots(1,2, figsize=(15, 7))
+    while True:
+        msg = client.next()
+        ax[0].imshow(msg.mean_image[::2, ::2])
+        for i in range(msg.intensities.shape[0]):
+            ax[1].plot(msg.momentum, msg.intensities[i], label=f"Pulse {i}")
+            ax[1].set_title(f'Integrated image : {msg.timestamp}')
+        ax[1].legend()
+        plt.tight_layout()
+        plt.pause(0.01)
+        plt.cla()
+
+
 if __name__ == "__main__":
-    start_application()
+    start_pipeline()

@@ -57,20 +57,3 @@ class DataClient:
         req = self._socket.send(b"next")
         message = self._socket.recv()
         return pickle.loads(message)
-
-
-if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-
-    client = DataClient("tcp://127.0.0.1:54055")
-    fig, ax = plt.subplots(1,2, figsize=(15, 7))
-    while True:
-        msg = client.next()
-        ax[0].imshow(msg.mean_image[::2, ::2])
-        for i in range(msg.intensities.shape[0]):
-            ax[1].plot(msg.momentum, msg.intensities[i], label=f"Pulse {i}")
-            ax[1].set_title(f'Integrated image : {msg.timestamp}')
-        ax[1].legend()
-        plt.tight_layout()
-        plt.pause(0.01)
-        plt.cla()
