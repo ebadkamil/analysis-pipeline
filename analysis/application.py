@@ -100,17 +100,28 @@ def start_pipeline():
 
 def start_test_client():
     import matplotlib.pyplot as plt
+    import numpy as np
 
     client = DataClient("tcp://127.0.0.1:54055")
-    fig, ax = plt.subplots(1,2, figsize=(15, 7))
+    fig = plt.figure(figsize=(8, 8), constrained_layout=True)
+    gs = fig.add_gridspec(2,2)
+    ax1 = fig.add_subplot(gs[0, 0])
+    ax2 = fig.add_subplot(gs[0, 1])
+    ax3 = fig.add_subplot(gs[1, :])
+
     while True:
         msg = client.next()
-        ax[0].imshow(msg.mean_image[::2, ::2])
+        ax1.imshow(msg.mean_image, cmap='jet')
+        ax1.set_title("Raw image")
+        ax2.imshow(np.mean(msg.edges, axis=0), cmap='gray')
+        ax2.set_title("Edge detection")
         for i in range(msg.intensities.shape[0]):
-            ax[1].plot(msg.momentum, msg.intensities[i], label=f"Pulse {i}")
-            ax[1].set_title(f'Integrated image : {msg.timestamp}')
-        ax[1].legend()
-        plt.tight_layout()
+            ax3.plot(msg.momentum, msg.intensities[i], label=f"Pulse {i}")
+            ax3.set_title(f'Integrated image')
+        ax3.set_xlabel("q")
+        ax3.set_ylabel("I(q)")
+        ax3.legend(loc='upper left')
+        fig.suptitle(f'Processed image : {msg.timestamp}')
         plt.pause(0.01)
         plt.cla()
 
