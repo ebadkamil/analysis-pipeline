@@ -12,6 +12,7 @@ import queue
 import numpy as np
 
 from .azimuthal_integration import ImageIntegrator
+from .canny_edge import EdgeDetection
 
 
 class DataProcessor(mp.Process):
@@ -23,6 +24,7 @@ class DataProcessor(mp.Process):
         self._running = False
 
         self.integrator = ImageIntegrator()
+        self.edge_detector = EdgeDetection()
 
     def run(self):
         self._running = True
@@ -33,12 +35,13 @@ class DataProcessor(mp.Process):
             except queue.Empty:
                 continue
 
-            mean_image, momentum, intensities = self.process(raw)
+            mean_image, momentum, intensities, edges = self.process(raw)
 
             proc_data = IntegratedData(raw[0]['timestamp'])
             proc_data.mean_image = mean_image
             proc_data.momentum = momentum
             proc_data.intensities = intensities
+            proc_data.edges = edges
 
             while self._running:
                 try:
@@ -62,7 +65,8 @@ class DataProcessor(mp.Process):
 
         image = data['image']
         mom, intensities = self.integrator.integrate(config, image)
-        return np.mean(image, axis=0), mom, intensities
+        edges = self.edge_detector.find_edges(image)
+        return np.mean(image, axis=0), mom, intensities, edges
 
 
 class IntegratedData:
@@ -71,6 +75,7 @@ class IntegratedData:
         self.mean_image = None
         self.momentum = None
         self.intensities = None
+        self.edges = None
 
     @property
     def timestamp(self):
