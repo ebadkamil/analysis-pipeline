@@ -3,7 +3,7 @@
     - Simulated data streaming in a process
     - Processing simulated data in a different process.
     - Streaming processed data over ZMQ socket
-    - Simple client that receive processed data over network and display
+    - Simple **DASH** based web client that receive processed data over network and display
 
 Installing
 ==========
