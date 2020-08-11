@@ -26,6 +26,10 @@ Usage:
         start_pipeline {hostname} {port}
         hostname, port: tcp://{hostname}:{port} address for ZMQ streaming of processed data.
 
- - Open another terminal and start the client that displays processed data:
+ - Open another terminal and start the **Matplotlib** client that displays processed data:
     
         start_test_client
+ 
+ - Open another terminal and start the **DASH** based client that displays processed data:
+    
+        start_dash_client
