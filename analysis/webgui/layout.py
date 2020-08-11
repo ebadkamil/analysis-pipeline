@@ -8,7 +8,7 @@ import dash_html_components as html
 import dash_core_components as dcc
 import dash_daq as daq
 
-colors_map = ['Blackbody', 'Reds', 'Viridis']
+colors_map = ['Blackbody', 'Reds', 'Viridis', 'gray']
 
 def get_stream_tab(config):
     return html.Div(className='control-tab',
@@ -93,23 +93,9 @@ def get_plot_tab(config):
                         type='number',
                         value=config["int_pts"],
                         className="rightbox"),
-                     html.Label("Integration range:",
-                                className="leftbox"),
-                     dcc.RangeSlider(
-                        id='int-rng',
-                        min=0,
-                        max=10.0,
-                        value=config["int_rng"],
-                        className="rightbox"),
-                     html.Label("Mask range:", className="leftbox"),
-                     dcc.RangeSlider(
-                        id='mask-rng',
-                        min=0,
-                        max=10000.0,
-                        value=config["mask_rng"],
-                        className="rightbox"),
 
                      ], className="pretty_container six columns"),
+
                 html.Div([
                     html.Label("Edge detection set up"),
                     html.Hr(),
@@ -126,10 +112,26 @@ def get_plot_tab(config):
                         ],
                         value=['apply_filter'],
                         className="rightbox"),
+                    html.Label("Integration range:",
+                                className="leftbox"),
+                    dcc.RangeSlider(
+                        id='int-rng',
+                        min=0,
+                        max=10.0,
+                        value=config["int_rng"],
+                        className="rightbox"),
+                    html.Label("Mask range:", className="leftbox"),
+                    dcc.RangeSlider(
+                        id='mask-rng',
+                        min=0,
+                        max=10000.0,
+                        value=config["mask_rng"],
+                        className="rightbox"),
                     html.Div(id="logger")
                 ], className="pretty_container six columns")
 
             ], className="row"),
+            html.Hr(),
             html.Div(
             [html.Div(
                 [dcc.Dropdown(
@@ -149,7 +151,7 @@ def get_plot_tab(config):
                     className="rightbox")],
                 className="pretty_container six columns")],
             className="row"),
-
+            html.Hr(),
             html.Div([
                 html.Div(
                     [dcc.Graph(
@@ -203,8 +205,8 @@ def get_layout(UPDATE_INT, config=None):
             ),
         ]),
         daq.LEDDisplay(
-            id='train-id',
-            value=1000,
+            id='timestamp',
+            value="1000",
             color="#FF5E5E",
             style=dict(textAlign="center")),
 
