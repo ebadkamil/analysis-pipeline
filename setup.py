@@ -22,10 +22,13 @@ setup(name="analysis-pipeline",
       entry_points={
           "console_scripts": [
               "start_pipeline = analysis.application:start_pipeline",
-              "start_test_client = analysis.application:start_test_client"
+              "start_test_client = analysis.application:start_test_client",
+              "start_dash_client = analysis.application:start_dash_client"
           ],
       },
       install_requires=[
+           'dash>=1.6.1',
+           'dash-daq>=0.3.1',
            'pyFAI>0.16.0',
            'redis',
            'pyzmq',

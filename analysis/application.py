@@ -18,6 +18,7 @@ import subprocess
 import redis
 
 from .processor import DataProcessor, DataSimulator
+from .webgui import DashApp
 from .zmq_streamer import DataClient, DataStreamer
 
 
@@ -125,6 +126,11 @@ def start_test_client():
         plt.pause(0.01)
         plt.cla()
 
+
+def start_dash_client():
+
+    app = DashApp('127.0.0.1', 54055)
+    app._app.run_server(debug=False)
 
 if __name__ == "__main__":
     start_pipeline()
