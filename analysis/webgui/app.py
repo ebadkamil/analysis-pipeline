@@ -73,14 +73,12 @@ class DashApp:
                 raise dash.exceptions.PreventUpdate
 
             traces = [go.Heatmap(
-                z=self._data.mean_image[::3, ::3], colorscale=color_scale)]
+                z=self._data.mean_image, colorscale=color_scale)]
             figure = {
                 'data': traces,
                 'layout': go.Layout(
                     margin={'l': 40, 'b': 40, 't': 40, 'r': 10},
                     title="Raw Image",
-                    paper_bgcolor='rgb(233,233,233)',
-                    plot_bgcolor='rgb(233,233,233)'
                 )
             }
 
@@ -94,15 +92,31 @@ class DashApp:
                 raise dash.exceptions.PreventUpdate
 
             traces = [go.Heatmap(
-                z=np.mean(self._data.edges[:, ::3,::3], axis=0),
+                z=np.mean(self._data.edges, axis=0),
                 colorscale=color_scale)]
             figure = {
                 'data': traces,
                 'layout': go.Layout(
                     margin={'l': 40, 'b': 40, 't': 40, 'r': 10},
                     title="Edge detection",
-                    paper_bgcolor='rgb(233,233,233)',
-                    plot_bgcolor='rgb(233,233,233)'
+                )
+            }
+
+            return figure
+
+        @self._app.callback(Output('histogram', 'figure'),
+                            [Input('timestamp', 'value')])
+        def update_histogram_figure(timestamp):
+            if self._data.timestamp != timestamp or self._data.mean_image is None:
+                raise dash.exceptions.PreventUpdate
+            hist, bins = np.histogram(self._data.mean_image.ravel(), bins=100)
+            bin_center = (bins[1:] + bins[:-1])/2.0
+            traces = [{'x': bin_center, 'y': hist,
+                       'type': 'bar'}]
+            figure = {
+                'data': traces,
+                'layout': go.Layout(
+                    margin={'l': 40, 'b': 40, 't': 40, 'r': 10},
                 )
             }
 
@@ -113,7 +127,7 @@ class DashApp:
                             [State('n-pulses', 'value')]
                             )
         def update_correlation_figure(timestamp, pulses):
-            if self._data.timestamp != timestamp or self._data.edges is None:
+            if self._data.timestamp != timestamp or self._data is None:
                 raise dash.exceptions.PreventUpdate
 
             try:
@@ -132,9 +146,7 @@ class DashApp:
                     margin={'l': 40, 'b': 40, 't': 40, 'r': 10},
                     hovermode='closest',
                     showlegend=True,
-                    title="Integrated Image",
-                    paper_bgcolor='rgb(233,233,233)',
-                    plot_bgcolor='rgb(233,233,233)')}
+                    title="Integrated Image",)}
 
             return figure
 
