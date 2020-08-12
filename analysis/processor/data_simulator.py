@@ -27,7 +27,7 @@ class DataSimulator(mp.Process):
 
         while self._running:
             shape = self._data_shape \
-                if self._data_shape is not None else (2, 1024, 1024)
+                if self._data_shape is not None else (2, 256, 256)
 
             choices = ["circles", "squares"]
             choice = np.random.choice(choices)
@@ -41,7 +41,7 @@ class DataSimulator(mp.Process):
                     np.random.randint(1, 20) * np.pi * (xx**2 + yy**2))
             else:
                 z = np.zeros(shape[1:])
-                x = np.random.randint(0, 512)
+                x = np.random.randint(10, 128)
                 z[x:-x, x:-x] = 10.
 
                 z = ndi.rotate(

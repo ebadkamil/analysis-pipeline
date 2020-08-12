@@ -54,12 +54,12 @@ class DataProcessor(mp.Process):
         meta, data = raw
         config = dict(energy=9.3,
                       pixel_size=0.5e-3,
-                      centrex=512,
-                      centrey=512,
+                      centrex=128,
+                      centrey=128,
                       distance=0.2,
-                      intg_rng=[0., 5],
+                      intg_rng=[0., 2],
                       intg_method='BBox',
-                      intg_pts=1024,
+                      intg_pts=512,
                       threshold_mask=(0,12),
                       user_mask=None)
 
