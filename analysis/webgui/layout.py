@@ -8,7 +8,7 @@ import dash_html_components as html
 import dash_core_components as dcc
 import dash_daq as daq
 
-colors_map = ['Blackbody', 'Reds', 'Viridis', 'gray']
+colors_map = ['jet', 'Reds', 'Viridis', 'gray']
 
 def get_stream_tab(config):
     return html.Div(className='control-tab',
@@ -166,8 +166,12 @@ def get_plot_tab(config):
             html.Div([
                 html.Div(
                     [dcc.Graph(
+                        id='histogram')],
+                    className="pretty_container four columns"),
+                html.Div(
+                    [dcc.Graph(
                         id='ai-integral')],
-                    className="pretty_container twelve columns"),],
+                    className="pretty_container eight columns"),],
             className="row"),
         ])
     return div
