@@ -28,12 +28,12 @@ def get_virtual_memory():
 
 class DashApp:
 
-    def __init__(self, hostname, port):
+    def __init__(self):
         app = dash.Dash(__name__)
         app.config['suppress_callback_exceptions'] = True
         self._app = app
         self._config = config
-        self._data_client = DataClient(f"tcp://{hostname}:{port}")
+        self._data_client = None
         self.setLayout()
         self.register_callbacks()
 
@@ -42,6 +42,26 @@ class DashApp:
 
     def register_callbacks(self):
         """Register callbacks"""
+        @self._app.callback(
+            Output('stream-info', 'children'),
+            [Input('start', 'on')],
+            [State('hostname', 'value'),
+             State('port', 'value')])
+        def stream(state, hostname, port):
+            info = ""
+            if state:
+                if not (hostname and port):
+                    info = f"Either hostname or port number missing"
+                    return [info]
+                print("Address ", f"tcp://{hostname}:{port}")
+                self._data_client = DataClient(f"tcp://{hostname}:{port}")
+                info = f"Listening to tcp://{hostname}:{port}"
+
+            elif not state:
+                self._data_client = None
+
+            return [info]
+
         @self._app.callback(
             Output('timestamp', 'value'),
             [Input('interval_component', 'n_intervals')])
@@ -151,7 +171,12 @@ class DashApp:
             return figure
 
     def _update(self):
-        try:
-            self._data = self._data_client.next()
-        except Exception:
-            self._data = None
+        self._data = None
+        if self._data_client is not None:
+            print("Hello World")
+            try:
+                self._data = self._data_client.next()
+                print(self._data)
+            except Exception as ex:
+                print(ex)
+                pass

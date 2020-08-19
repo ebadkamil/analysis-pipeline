@@ -51,6 +51,7 @@ class DataClient:
             raise NotImplementedError(f"Socket type {sock} not implemented")
 
         self._socket = self._context.socket(zmq.REQ)
+        self._socket.setsockopt(zmq.LINGER, 0)
         self._socket.connect(endpoint)
 
     def next(self):

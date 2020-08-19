@@ -10,6 +10,6 @@ config = dict(
     int_mthds = ['BBox', 'numpy', 'cython', 'splitpixel', 'csr', 'lut'],
     int_pts=512,
 
-    port=45454,
+    port=54055,
     hostname="127.0.0.1",
     TIME_OUT=1.0)
