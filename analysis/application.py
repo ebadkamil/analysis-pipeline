@@ -47,7 +47,8 @@ def start_redis_server(host='127.0.0.1', port=6379, *, password=None):
 
 
 class Application:
-    def __init__(self, hostname='127.0.0.1', port=6379, password=None):
+    def __init__(self, hostname, port, *,
+                 redis_host='127.0.0.1', redis_port=6379, password=None):
         # start_redis_server()
 
         # raw container (mp.Queue) where data from DataSimulator is fed
@@ -60,8 +61,10 @@ class Application:
 
         # ZMQ dispatcher to send processed data over network
         self._zmq_dispatcher_buffer = queue.Queue(maxsize=10)
+        if hostname == "localhost":
+            hostname = '*'
         self.data_streamer = DataStreamer(
-            "tcp://*:54055", self._zmq_dispatcher_buffer)
+            f"tcp://{hostname}:{port}", self._zmq_dispatcher_buffer)
 
     def start_app(self):
         # Start data simulator in a process
@@ -85,17 +88,25 @@ class Application:
 def start_pipeline():
     parser = argparse.ArgumentParser(prog="extra analysis")
     parser.add_argument("hostname", type=str, help="hostname")
-    parser.add_argument('port', type=int, help="port")
+    parser.add_argument("port", type=int,
+                        help="ZMQ port to stream processed data")
+    parser.add_argument("--redis_host", type=str,
+                        help="redis-hostname")
+    parser.add_argument('--redis_port', type=int,
+                        help="redis-port", required=False)
 
     args = parser.parse_args()
     host = args.hostname
-    if host not in ['localhost', '127.0.0.1']:
+    port = args.port
+
+    redis_host = args.redis_host
+    redis_port = args.redis_port
+
+    if redis_host and redis_host not in ['localhost', '127.0.0.1']:
         print("Cannot connect to remote host")
         sys.exit(1)
 
-    port = args.port
-
-    app = Application(hostname=host, port=port)
+    app = Application(host, port)
     app.start_app()
 
 
@@ -129,7 +140,9 @@ def start_test_client():
 
 def start_dash_client():
 
-    app = DashApp('127.0.0.1', 54055)
+    # app = DashApp('127.0.0.1', 54055)
+    app = DashApp()
+
     app._app.run_server(debug=False)
 
 if __name__ == "__main__":
