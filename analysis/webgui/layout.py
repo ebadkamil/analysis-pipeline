@@ -127,7 +127,8 @@ def get_plot_tab(config):
                         max=10000.0,
                         value=config["mask_rng"],
                         className="rightbox"),
-                    html.Div(id="logger")
+                    html.Div(id="logger"),
+
                 ], className="pretty_container six columns")
 
             ], className="row"),

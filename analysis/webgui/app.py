@@ -17,6 +17,7 @@ import plotly.graph_objs as go
 
 from .layout import get_layout
 from ..config import config
+from ..redisdb import get_redis_client, DashMeta
 from ..zmq_streamer import DataClient
 
 import psutil as ps
@@ -34,6 +35,9 @@ class DashApp:
         self._app = app
         self._config = config
         self._data_client = None
+        self._db = get_redis_client()
+        self._dmt = DashMeta()
+
         self.setLayout()
         self.register_callbacks()
 
@@ -170,13 +174,48 @@ class DashApp:
 
             return figure
 
+        @self._app.callback(Output('logger', 'children'),
+                            [Input('energy', 'value'),
+                             Input('distance', 'value'),
+                             Input('pixel-size', 'value'),
+                             Input('centrex', 'value'),
+                             Input('centrey', 'value'),
+                             Input('int-mthd', 'value'),
+                             Input('int-pts', 'value'),
+                             Input('int-rng', 'value'),
+                             Input('mask-rng', 'value')]
+                            )
+        def update_params(energy,
+                          distance,
+                          pixel_size,
+                          centerx,
+                          centery,
+                          int_mthd,
+                          int_pts,
+                          int_rng,
+                          mask_rng):
+
+            ai_config  = dict(energy=energy,
+                pixel_size=pixel_size,
+                centrex=centerx,
+                centrey=centery,
+                distance=distance,
+                intg_rng=str(int_rng),
+                intg_method=int_mthd,
+                intg_pts=int_pts,
+                threshold_mask=str(mask_rng))
+
+            try:
+                self._db.hmset(self._dmt.AZIMUTHAL_META, ai_config)
+            except Exception as ex:
+                print("[REDIS] ", ex)
+            return f"Redis Hash set: {ai_config}"
+
     def _update(self):
         self._data = None
         if self._data_client is not None:
-            print("Hello World")
             try:
                 self._data = self._data_client.next()
-                print(self._data)
             except Exception as ex:
                 print(ex)
                 pass
