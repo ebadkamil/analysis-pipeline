@@ -18,6 +18,7 @@ import subprocess
 import redis
 
 from .processor import DataProcessor, DataSimulator
+from .redisdb import get_redis_client
 from .webgui import DashApp
 from .zmq_streamer import DataClient, DataStreamer
 
@@ -49,7 +50,7 @@ def start_redis_server(host='127.0.0.1', port=6379, *, password=None):
 class Application:
     def __init__(self, hostname, port, *,
                  redis_host='127.0.0.1', redis_port=6379, password=None):
-        # start_redis_server()
+        start_redis_server()
 
         # raw container (mp.Queue) where data from DataSimulator is fed
         raw_queue = mp.Queue(maxsize=1)
@@ -60,7 +61,7 @@ class Application:
         self.data_processor = DataProcessor(raw_queue, self.proc_queue)
 
         # ZMQ dispatcher to send processed data over network
-        self._zmq_dispatcher_buffer = queue.Queue(maxsize=10)
+        self._zmq_dispatcher_buffer = queue.Queue(maxsize=1)
         if hostname == "localhost":
             hostname = '*'
         self.data_streamer = DataStreamer(
@@ -74,6 +75,8 @@ class Application:
         # Start ZMQ dispatcher in Thread of parent process
         self.data_streamer.start()
 
+        client = get_redis_client()
+
         while True:
             try:
                 # Get processed data from proc_queue mp.Queue
@@ -81,6 +84,7 @@ class Application:
                 print("Integrated image received at :", processed_data.timestamp)
                 # Feed processed data to zmq buffer queue.Queue
                 self._zmq_dispatcher_buffer.put_nowait(processed_data)
+                client.set("TimeStamp", processed_data.timestamp)
             except (queue.Empty, queue.Full):
                 continue
 
