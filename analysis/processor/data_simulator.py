@@ -49,7 +49,7 @@ class DataSimulator(mp.Process):
                     mode='constant', reshape=False)
 
             data = {'image': background + z}
-            meta = {'timestamp': datetime.now().strftime("%H:%M:%S.%f")}
+            meta = {'timestamp': datetime.now().strftime("%H:%M:%S")}
 
             payload = (meta, data)
             try:

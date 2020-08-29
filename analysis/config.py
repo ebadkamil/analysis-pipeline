@@ -2,8 +2,8 @@ import os.path as osp
 config = dict(
     energy=9.3,
     pixel_size=0.5e-3,
-    centerx=512,
-    centery=512,
+    centerx=128,
+    centery=128,
     distance=0.2,
     mask_rng=[0, 20],
     int_rng=[0., 5],
