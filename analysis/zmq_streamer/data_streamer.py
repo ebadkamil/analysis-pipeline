@@ -45,7 +45,6 @@ class DataStreamer(Thread):
 class DataClient:
 
     def __init__(self, endpoint, sock="REQ"):
-        super().__init__()
         self._context = zmq.Context()
         if sock != "REQ":
             raise NotImplementedError(f"Socket type {sock} not implemented")
