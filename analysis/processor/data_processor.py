@@ -5,7 +5,6 @@ Author: Ebad Kamil <ebad.kamil@xfel.eu>
 All rights reserved.
 """
 
-from datetime import datetime
 import multiprocessing as mp
 import queue
 

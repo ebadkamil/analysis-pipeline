@@ -4,8 +4,7 @@ Image analysis and web visualization
 Author: Ebad Kamil <kamilebad@gmail.com>
 All rights reserved.
 """
-import dash_html_components as html
-import dash_core_components as dcc
+from dash import dcc, html
 import dash_daq as daq
 
 colors_map = ['jet', 'Reds', 'Viridis', 'gray']

@@ -32,7 +32,11 @@ setup(name="analysis-pipeline",
            'pyFAI>0.16.0',
            'redis',
            'pyzmq',
-           'psutil'
+           'psutil',
+           'scikit-image',
+           "black==20.8b1",
+           "flake8==3.8.4",
+           "isort==5.7.0",
       ],
       extras_require={
         'test': [
