@@ -4,4 +4,5 @@ __pycache__
 thirdparty/bin
 pkg
 !.gitignore
+!.pre-commit-config.yaml
 
