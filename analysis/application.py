@@ -6,14 +6,11 @@ All rights reserved.
 """
 
 import argparse
-import os
-import sys
-import time
-
-import psutil
 import multiprocessing as mp
 import queue
 import subprocess
+import sys
+import time
 
 import redis
 
@@ -22,10 +19,11 @@ from .webgui import DashApp
 from .zmq_streamer import DataClient, DataStreamer
 
 
-def start_redis_server(host='127.0.0.1', port=6379, *, password=None):
+def start_redis_server(host="127.0.0.1", port=6379, *, password=None):
     command = [
         "/home/xfeluser/extra-analysis/thirdparty/bin/redis-server",
-        "--port", str(port)
+        "--port",
+        str(port),
     ]
 
     process = subprocess.Popen(command)
@@ -35,7 +33,7 @@ def start_redis_server(host='127.0.0.1', port=6379, *, password=None):
         try:
             var = client.ping()
             print(f"Attempt {i+1} to connect to redis succeeded:", var)
-        except Exception as ex:
+        except Exception:
             time.sleep(2)
         else:
             break
@@ -47,7 +45,7 @@ def start_redis_server(host='127.0.0.1', port=6379, *, password=None):
 
 
 class Application:
-    def __init__(self, hostname='127.0.0.1', port=6379, password=None):
+    def __init__(self, hostname="127.0.0.1", port=6379, password=None):
         # start_redis_server()
 
         # raw container (mp.Queue) where data from DataSimulator is fed
@@ -60,8 +58,7 @@ class Application:
 
         # ZMQ dispatcher to send processed data over network
         self._zmq_dispatcher_buffer = queue.Queue(maxsize=10)
-        self.data_streamer = DataStreamer(
-            "tcp://*:54055", self._zmq_dispatcher_buffer)
+        self.data_streamer = DataStreamer("tcp://*:54055", self._zmq_dispatcher_buffer)
 
     def start_app(self):
         # Start data simulator in a process
@@ -85,11 +82,11 @@ class Application:
 def start_pipeline():
     parser = argparse.ArgumentParser(prog="extra analysis")
     parser.add_argument("hostname", type=str, help="hostname")
-    parser.add_argument('port', type=int, help="port")
+    parser.add_argument("port", type=int, help="port")
 
     args = parser.parse_args()
     host = args.hostname
-    if host not in ['localhost', '127.0.0.1']:
+    if host not in ["localhost", "127.0.0.1"]:
         print("Cannot connect to remote host")
         sys.exit(1)
 
@@ -105,32 +102,33 @@ def start_test_client():
 
     client = DataClient("tcp://127.0.0.1:54055")
     fig = plt.figure(figsize=(8, 8), constrained_layout=True)
-    gs = fig.add_gridspec(2,2)
+    gs = fig.add_gridspec(2, 2)
     ax1 = fig.add_subplot(gs[0, 0])
     ax2 = fig.add_subplot(gs[0, 1])
     ax3 = fig.add_subplot(gs[1, :])
 
     while True:
         msg = client.next()
-        ax1.imshow(msg.mean_image, cmap='jet')
+        ax1.imshow(msg.mean_image, cmap="jet")
         ax1.set_title("Raw image")
-        ax2.imshow(np.mean(msg.edges, axis=0), cmap='gray')
+        ax2.imshow(np.mean(msg.edges, axis=0), cmap="gray")
         ax2.set_title("Edge detection")
         for i in range(msg.intensities.shape[0]):
             ax3.plot(msg.momentum, msg.intensities[i], label=f"Pulse {i}")
-            ax3.set_title(f'Integrated image')
+            ax3.set_title("Integrated image")
         ax3.set_xlabel("q")
         ax3.set_ylabel("I(q)")
-        ax3.legend(loc='upper left')
-        fig.suptitle(f'Processed image : {msg.timestamp}')
+        ax3.legend(loc="upper left")
+        fig.suptitle(f"Processed image : {msg.timestamp}")
         plt.pause(0.01)
         plt.cla()
 
 
 def start_dash_client():
 
-    app = DashApp('127.0.0.1', 54055)
+    app = DashApp("127.0.0.1", 54055)
     app._app.run_server(debug=False)
+
 
 if __name__ == "__main__":
     start_pipeline()

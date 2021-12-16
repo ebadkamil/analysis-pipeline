@@ -36,7 +36,7 @@ class DataProcessor(mp.Process):
 
             mean_image, momentum, intensities, edges = self.process(raw)
 
-            proc_data = IntegratedData(raw[0]['timestamp'])
+            proc_data = IntegratedData(raw[0]["timestamp"])
             proc_data.mean_image = mean_image
             proc_data.momentum = momentum
             proc_data.intensities = intensities
@@ -51,18 +51,20 @@ class DataProcessor(mp.Process):
 
     def process(self, raw):
         meta, data = raw
-        config = dict(energy=9.3,
-                      pixel_size=0.5e-3,
-                      centrex=128,
-                      centrey=128,
-                      distance=0.2,
-                      intg_rng=[0., 2],
-                      intg_method='BBox',
-                      intg_pts=512,
-                      threshold_mask=(0,12),
-                      user_mask=None)
+        config = dict(
+            energy=9.3,
+            pixel_size=0.5e-3,
+            centrex=128,
+            centrey=128,
+            distance=0.2,
+            intg_rng=[0.0, 2],
+            intg_method="BBox",
+            intg_pts=512,
+            threshold_mask=(0, 12),
+            user_mask=None,
+        )
 
-        image = data['image']
+        image = data["image"]
         mom, intensities = self.integrator.integrate(config, image)
         edges = self.edge_detector.find_edges(image)
         return np.mean(image, axis=0), mom, intensities, edges

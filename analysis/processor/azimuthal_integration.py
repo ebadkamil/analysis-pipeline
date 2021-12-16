@@ -8,13 +8,11 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 
 import numpy as np
-from scipy import constants
-
 from pyFAI.azimuthalIntegrator import AzimuthalIntegrator
+from scipy import constants
 
 
 class PyFaiAzimuthalIntegrator(object):
-
     def __init__(self):
         self._distance = None
         self._wavelength = None
@@ -41,14 +39,17 @@ class PyFaiAzimuthalIntegrator(object):
     def __set__(self, instance, data):
         # data is of shape (pulses, px, py)
         integrator = self._update_integrator()
-        itgt1d = partial(integrator.integrate1d,
-                         method=self._intg_method,
-                         radial_range=self._intg_rng,
-                         correctSolidAngle=True,
-                         polarization_factor=1,
-                         unit="q_A^-1")
+        itgt1d = partial(
+            integrator.integrate1d,
+            method=self._intg_method,
+            radial_range=self._intg_rng,
+            correctSolidAngle=True,
+            polarization_factor=1,
+            unit="q_A^-1",
+        )
 
         integ_points = self._intg_pts
+
         def _integrate(i):
             mask = np.zeros_like(data[i], dtype=np.uint8)
             # Apply mask for nan
@@ -64,15 +65,16 @@ class PyFaiAzimuthalIntegrator(object):
                 if image_shape == mask_shape:
                     np.logical_or(mask, self._user_mask[i], out=mask)
                 else:
-                    print(f"User provided mask {mask_shape} and "
-                          f"image {image_shape} have different shapes")
+                    print(
+                        f"User provided mask {mask_shape} and "
+                        f"image {image_shape} have different shapes"
+                    )
 
             ret = itgt1d(data[i], integ_points, mask=mask)
             return ret.radial, ret.intensity
 
         with ThreadPoolExecutor(max_workers=5) as executor:
-            rets = executor.map(_integrate,
-                                range(data.shape[0]))
+            rets = executor.map(_integrate, range(data.shape[0]))
 
         momentums, intensities = zip(*rets)
         self._momentum = momentums[0]
@@ -94,20 +96,26 @@ class PyFaiAzimuthalIntegrator(object):
                 rot1=0,
                 rot2=0,
                 rot3=0,
-                wavelength=self._wavelength)
+                wavelength=self._wavelength,
+            )
         else:
-            if self._ai_integrator.dist != self._distance \
-                    or self._ai_integrator.wavelength != self._wavelength \
-                    or self._ai_integrator.poni1 != self._poni1 \
-                    or self._ai_integrator.poni2 != self._poni2:
+            if (
+                self._ai_integrator.dist != self._distance
+                or self._ai_integrator.wavelength != self._wavelength
+                or self._ai_integrator.poni1 != self._poni1
+                or self._ai_integrator.poni2 != self._poni2
+            ):
                 self._ai_integrator.set_param(
-                    (self._distance,
-                     self._poni1,
-                     self._poni2,
-                     0,
-                     0,
-                     0,
-                     self._wavelength))
+                    (
+                        self._distance,
+                        self._poni1,
+                        self._poni2,
+                        0,
+                        0,
+                        0,
+                        self._wavelength,
+                    )
+                )
         return self._ai_integrator
 
     @property
@@ -150,8 +158,16 @@ class PyFaiAzimuthalIntegrator(object):
 
     @intg_method.setter
     def intg_method(self, val):
-        _available_methods = ["numpy", "cython", "BBox", "lut",
-                              "csr", "nosplit_csr", "full_csr", "lut_ocl"]
+        _available_methods = [
+            "numpy",
+            "cython",
+            "BBox",
+            "lut",
+            "csr",
+            "nosplit_csr",
+            "full_csr",
+            "lut_ocl",
+        ]
         if val not in _available_methods:
             raise ValueError("Support available methods {}")
         self._intg_method = val
@@ -189,7 +205,9 @@ class PyFaiAzimuthalIntegrator(object):
 
     @user_mask.setter
     def user_mask(self, val):
-        if val is not None and (not isinstance(val, np.ndarray) or val.dtype != np.uint8): #noqa
+        if val is not None and (
+            not isinstance(val, np.ndarray) or val.dtype != np.uint8
+        ):  # noqa
             raise ValueError("User mask must be ndarray of dtype np.uint8")
         self._user_mask = val
 
@@ -212,6 +230,7 @@ class ImageIntegrator:
         Shape of numpy array: (n_points, )
     intensities: ndarray
         Shape of numpy array: (n_pulses, n_points)"""
+
     constant = 1e-3 * constants.c * constants.h / constants.e
 
     _azimuthal_integrator = PyFaiAzimuthalIntegrator()
@@ -241,25 +260,26 @@ class ImageIntegrator:
             Shape: (pulses, px, py)
         """
         # Set properties of _azimuthal_integrator descriptor
-        self.__class__._azimuthal_integrator.distance = ai_config['distance']
-        self.__class__._azimuthal_integrator.wavelength = \
+        self.__class__._azimuthal_integrator.distance = ai_config["distance"]
+        self.__class__._azimuthal_integrator.wavelength = (
             ImageIntegrator.constant / ai_config["energy"]
-        self.__class__._azimuthal_integrator.poni1 = \
-            ai_config["centrey"] * ai_config['pixel_size']
-        self.__class__._azimuthal_integrator.poni2 = \
-            ai_config["centrex"] * ai_config['pixel_size']
-        self.__class__._azimuthal_integrator.intg_method = \
-            ai_config['intg_method']
-        self.__class__._azimuthal_integrator.intg_rng = \
-            ai_config['intg_rng']
-        self.__class__._azimuthal_integrator.intg_pts = \
-            ai_config['intg_pts']
-        self.__class__._azimuthal_integrator.pixel_size = \
-            ai_config['pixel_size']
-        self.__class__._azimuthal_integrator.threshold_mask = \
-            ai_config.get('threshold_mask', None)
-        self.__class__._azimuthal_integrator.user_mask = \
-            ai_config.get('user_mask', None)
+        )
+        self.__class__._azimuthal_integrator.poni1 = (
+            ai_config["centrey"] * ai_config["pixel_size"]
+        )
+        self.__class__._azimuthal_integrator.poni2 = (
+            ai_config["centrex"] * ai_config["pixel_size"]
+        )
+        self.__class__._azimuthal_integrator.intg_method = ai_config["intg_method"]
+        self.__class__._azimuthal_integrator.intg_rng = ai_config["intg_rng"]
+        self.__class__._azimuthal_integrator.intg_pts = ai_config["intg_pts"]
+        self.__class__._azimuthal_integrator.pixel_size = ai_config["pixel_size"]
+        self.__class__._azimuthal_integrator.threshold_mask = ai_config.get(
+            "threshold_mask", None
+        )
+        self.__class__._azimuthal_integrator.user_mask = ai_config.get(
+            "user_mask", None
+        )
 
         self._azimuthal_integrator = image
         self.momentums, self.intensities = self._azimuthal_integrator
@@ -269,16 +289,19 @@ class ImageIntegrator:
 if __name__ == "__main__":
 
     intg = ImageIntegrator()
-    config = dict(energy=9.3,
-                  pixel_size=0.5e-3,
-                  centrex=512,
-                  centrey=512,
-                  distance=0.2,
-                  intg_rng=[0., 5],
-                  intg_method='BBox',
-                  intg_pts=512,
-                  threshold_mask=(0,100),
-                  user_mask=None)
+    config = dict(
+        energy=9.3,
+        pixel_size=0.5e-3,
+        centrex=512,
+        centrey=512,
+        distance=0.2,
+        intg_rng=[0.0, 5],
+        intg_method="BBox",
+        intg_pts=512,
+        threshold_mask=(0, 100),
+        user_mask=None,
+    )
     mom, intensities = intg.integrate(
-        config, np.random.uniform(-200, 2000, (1, 1024, 1024)))
+        config, np.random.uniform(-200, 2000, (1, 1024, 1024))
+    )
     print(intensities)
