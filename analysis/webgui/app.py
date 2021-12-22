@@ -12,10 +12,10 @@ import plotly.graph_objs as go
 import psutil as ps
 from dash.dependencies import Input, Output, State
 
-from ..config import config
-from ..redisdb import DashMeta, get_redis_client
-from ..zmq_streamer import DataClient
-from .layout import get_layout
+from analysis.config import config
+from analysis.redisdb import DashMeta, get_redis_client
+from analysis.webgui.layout import get_layout
+from analysis.zmq_streamer.data_streamer import DataClient
 
 
 def get_virtual_memory():

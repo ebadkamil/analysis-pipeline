@@ -14,10 +14,11 @@ import time
 
 import redis
 
-from .processor import DataProcessor, DataSimulator
-from .redisdb import get_redis_client
-from .webgui import DashApp
-from .zmq_streamer import DataClient, DataStreamer
+from analysis.processor.data_processor import DataProcessor
+from analysis.processor.data_simulator import DataSimulator
+from analysis.redisdb import get_redis_client
+from analysis.webgui.app import DashApp
+from analysis.zmq_streamer.data_streamer import DataClient, DataStreamer
 
 
 def start_redis_server(host="127.0.0.1", port=6379, *, password=None):

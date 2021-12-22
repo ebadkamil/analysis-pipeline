@@ -10,9 +10,9 @@ import queue
 
 import numpy as np
 
-from ..redisdb import DashMeta, get_redis_client, str2tuple
-from .azimuthal_integration import ImageIntegrator
-from .canny_edge import EdgeDetection
+from analysis.processor.azimuthal_integration import ImageIntegrator
+from analysis.processor.canny_edge import EdgeDetection
+from analysis.redisdb import DashMeta, get_redis_client, str2tuple
 
 
 class DataProcessor(mp.Process):
