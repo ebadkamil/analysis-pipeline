@@ -7,12 +7,13 @@ All rights reserved.
 
 import argparse
 import multiprocessing as mp
+import os
 import queue
-import subprocess
 import sys
 import time
 
 import redis
+from compose.cli.main import TopLevelCommand, project_from_options
 
 from analysis.processor.data_processor import DataProcessor
 from analysis.processor.data_simulator import DataSimulator
@@ -20,16 +21,54 @@ from analysis.redisdb import get_redis_client
 from analysis.webgui.app import DashApp
 from analysis.zmq_streamer.data_streamer import DataClient, DataStreamer
 
+common_options = {
+    "--no-deps": False,
+    "--always-recreate-deps": False,
+    "--scale": "",
+    "--abort-on-container-exit": False,
+    "SERVICE": "",
+    "--remove-orphans": False,
+    "--no-recreate": True,
+    "--force-recreate": False,
+    "--no-build": False,
+    "--no-color": False,
+    "--rmi": "none",
+    "--volumes": True,  # Remove volumes when docker-compose down (don't persist kafka and zk data)
+    "--follow": False,
+    "--timestamps": False,
+    "--tail": "all",
+    "--detach": True,
+    "--build": False,
+    "--no-log-prefix": False,
+}
+
+
+def run_containers(cmd, options):
+    print("Running docker-compose up", flush=True)
+    cmd.up(options)
+    print("\nFinished docker-compose up\n", flush=True)
+
+
+def build_and_run(options, request=None, config_file=None, log_file=None):
+    project = project_from_options(os.path.dirname(os.path.dirname(__file__)), options)
+    cmd = TopLevelCommand(project)
+    run_containers(cmd, options)
+
 
 def start_redis_server(host="127.0.0.1", port=6379, *, password=None):
-    command = [
-        "/home/xfeluser/extra-analysis/thirdparty/bin/redis-server",
-        "--port",
-        str(port),
-    ]
+    # command = [
+    #     "/home/xfeluser/extra-analysis/thirdparty/bin/redis-server",
+    #     "--port",
+    #     str(port),
+    # ]
 
-    process = subprocess.Popen(command)
+    # process = subprocess.Popen(command)
 
+    options = common_options
+    options["--project-name"] = "lr"
+    options["--file"] = ["compose/docker-compose-redis.yml"]
+
+    build_and_run(options)
     client = redis.Redis(host=host, port=port)
     for i in range(5):
         try:
@@ -40,10 +79,10 @@ def start_redis_server(host="127.0.0.1", port=6379, *, password=None):
         else:
             break
 
-    if process.poll() is None:
-        print("Redis process is running...")
-    else:
-        print("Redis was terminated ...")
+    # if process.poll() is None:
+    #     print("Redis process is running...")
+    # else:
+    #     print("Redis was terminated ...")
 
 
 class Application:
@@ -149,4 +188,5 @@ def start_dash_client():
 
 
 if __name__ == "__main__":
-    start_pipeline()
+    # start_pipeline()
+    start_redis_server()
