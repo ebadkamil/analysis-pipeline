@@ -4,6 +4,7 @@
     - Processing simulated data in a different process.
     - Streaming processed data over ZMQ socket
     - Simple **DASH** based web client that receive processed data over network and display
+    - **DASH** app components metadata is accessed between different process through REDIS as a broker  
 
 Installing
 ==========

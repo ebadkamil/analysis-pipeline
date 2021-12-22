@@ -49,12 +49,12 @@ class DataSimulator(mp.Process):
                 )
 
             data = {"image": background + z}
-            meta = {"timestamp": datetime.now().strftime("%H:%M:%S.%f")}
+            meta = {"timestamp": datetime.now().strftime("%H:%M:%S")}
 
             payload = (meta, data)
             try:
                 self._sim_queue.put_nowait(payload)
-                time.sleep(0.1)
+                time.sleep(0.5)
             except queue.Full:
                 continue
 

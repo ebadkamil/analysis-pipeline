@@ -23,10 +23,11 @@ class DataStreamer(Thread):
         self._socket.bind(endpoint)
 
         self._buffer = buffer
+        self._running = True
 
     def run(self):
         try:
-            while True:
+            while self._running:
                 req = self._socket.recv()
                 if req == b"next":
                     try:
@@ -42,6 +43,9 @@ class DataStreamer(Thread):
             self._socket.setsockopt(zmq.LINGER, 0)
             self._socket.close()
 
+    def stop(self):
+        self._running = False
+
 
 class DataClient:
     def __init__(self, endpoint, sock="REQ"):
@@ -50,6 +54,7 @@ class DataClient:
             raise NotImplementedError(f"Socket type {sock} not implemented")
 
         self._socket = self._context.socket(zmq.REQ)
+        self._socket.setsockopt(zmq.LINGER, 0)
         self._socket.connect(endpoint)
 
     def next(self):

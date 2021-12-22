@@ -12,6 +12,7 @@ import numpy as np
 
 from analysis.processor.azimuthal_integration import ImageIntegrator
 from analysis.processor.canny_edge import EdgeDetection
+from analysis.redisdb import DashMeta, get_redis_client, str2tuple
 
 
 class DataProcessor(mp.Process):
@@ -24,6 +25,8 @@ class DataProcessor(mp.Process):
 
         self.integrator = ImageIntegrator()
         self.edge_detector = EdgeDetection()
+        self._db = get_redis_client()
+        self._dmt = DashMeta()
 
     def run(self):
         self._running = True
@@ -50,17 +53,36 @@ class DataProcessor(mp.Process):
                     continue
 
     def process(self, raw):
+        try:
+            cfg = self._db.hgetall(self._dmt.AZIMUTHAL_META)
+        except Exception as ex:
+            print("[REDIS] ", ex)
+
+        if not cfg:
+            cfg = dict(
+                energy="9.3",
+                pixel_size="0.5e-3",
+                centrex="128",
+                centrey="128",
+                distance="0.2",
+                intg_rng="[0., 2]",
+                intg_method="BBox",
+                intg_pts="512",
+                threshold_mask="(0,12)",
+                user_mask=None,
+            )
+
         meta, data = raw
         config = dict(
-            energy=9.3,
-            pixel_size=0.5e-3,
-            centrex=128,
-            centrey=128,
-            distance=0.2,
-            intg_rng=[0.0, 2],
+            energy=float(cfg["energy"]),
+            pixel_size=float(cfg["pixel_size"]),
+            centrex=float(cfg["centrex"]),
+            centrey=float(cfg["centrey"]),
+            distance=float(cfg["distance"]),
+            intg_rng=str2tuple(cfg["intg_rng"]),
             intg_method="BBox",
-            intg_pts=512,
-            threshold_mask=(0, 12),
+            intg_pts=int(cfg["intg_pts"]),
+            threshold_mask=str2tuple(cfg["threshold_mask"]),
             user_mask=None,
         )
 
@@ -68,6 +90,9 @@ class DataProcessor(mp.Process):
         mom, intensities = self.integrator.integrate(config, image)
         edges = self.edge_detector.find_edges(image)
         return np.mean(image, axis=0), mom, intensities, edges
+
+    def terminate(self):
+        self._running = False
 
 
 class IntegratedData:

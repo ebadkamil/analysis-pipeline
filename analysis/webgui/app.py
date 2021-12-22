@@ -13,6 +13,7 @@ import psutil as ps
 from dash.dependencies import Input, Output, State
 
 from analysis.config import config
+from analysis.redisdb import DashMeta, get_redis_client
 from analysis.webgui.layout import get_layout
 from analysis.zmq_streamer.data_streamer import DataClient
 
@@ -23,12 +24,15 @@ def get_virtual_memory():
 
 
 class DashApp:
-    def __init__(self, hostname, port):
+    def __init__(self):
         app = dash.Dash(__name__)
         app.config["suppress_callback_exceptions"] = True
         self._app = app
         self._config = config
-        self._data_client = DataClient(f"tcp://{hostname}:{port}")
+        self._data_client = None
+        self._db = get_redis_client()
+        self._dmt = DashMeta()
+
         self.setLayout()
         self.register_callbacks()
 
@@ -37,6 +41,26 @@ class DashApp:
 
     def register_callbacks(self):
         """Register callbacks"""
+
+        @self._app.callback(
+            Output("stream-info", "children"),
+            [Input("start", "on")],
+            [State("hostname", "value"), State("port", "value")],
+        )
+        def stream(state, hostname, port):
+            info = ""
+            if state:
+                if not (hostname and port):
+                    info = "Either hostname or port number missing"
+                    return [info]
+                print("Address ", f"tcp://{hostname}:{port}")
+                self._data_client = DataClient(f"tcp://{hostname}:{port}")
+                info = f"Listening to tcp://{hostname}:{port}"
+
+            elif not state:
+                self._data_client = None
+
+            return [info]
 
         @self._app.callback(
             Output("timestamp", "value"), [Input("interval_component", "n_intervals")]
@@ -159,8 +183,55 @@ class DashApp:
 
             return figure
 
+        @self._app.callback(
+            Output("logger", "children"),
+            [
+                Input("energy", "value"),
+                Input("distance", "value"),
+                Input("pixel-size", "value"),
+                Input("centrex", "value"),
+                Input("centrey", "value"),
+                Input("int-mthd", "value"),
+                Input("int-pts", "value"),
+                Input("int-rng", "value"),
+                Input("mask-rng", "value"),
+            ],
+        )
+        def update_params(
+            energy,
+            distance,
+            pixel_size,
+            centerx,
+            centery,
+            int_mthd,
+            int_pts,
+            int_rng,
+            mask_rng,
+        ):
+
+            ai_config = dict(
+                energy=energy,
+                pixel_size=pixel_size,
+                centrex=centerx,
+                centrey=centery,
+                distance=distance,
+                intg_rng=str(int_rng),
+                intg_method=int_mthd,
+                intg_pts=int_pts,
+                threshold_mask=str(mask_rng),
+            )
+
+            try:
+                self._db.hmset(self._dmt.AZIMUTHAL_META, ai_config)
+            except Exception as ex:
+                print("[REDIS] ", ex)
+            return f"Redis Hash set: {ai_config}"
+
     def _update(self):
-        try:
-            self._data = self._data_client.next()
-        except Exception:
-            self._data = None
+        self._data = None
+        if self._data_client is not None:
+            try:
+                self._data = self._data_client.next()
+            except Exception as ex:
+                print(ex)
+                pass
