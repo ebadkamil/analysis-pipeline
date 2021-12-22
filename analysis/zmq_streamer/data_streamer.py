@@ -7,11 +7,12 @@ All rights reserved.
 import pickle
 import queue
 from threading import Thread
+
 import zmq
 
 
 class DataStreamer(Thread):
-    def __init__(self, endpoint, buffer, sock='REP'):
+    def __init__(self, endpoint, buffer, sock="REP"):
         super().__init__()
         self._context = zmq.Context()
 
@@ -43,9 +44,7 @@ class DataStreamer(Thread):
 
 
 class DataClient:
-
     def __init__(self, endpoint, sock="REQ"):
-        super().__init__()
         self._context = zmq.Context()
         if sock != "REQ":
             raise NotImplementedError(f"Socket type {sock} not implemented")
@@ -55,6 +54,6 @@ class DataClient:
         self._socket.connect(endpoint)
 
     def next(self):
-        req = self._socket.send(b"next")
+        _ = self._socket.send(b"next")
         message = self._socket.recv()
         return pickle.loads(message)

@@ -5,13 +5,13 @@ Author: Ebad Kamil <ebad.kamil@xfel.eu>
 All rights reserved.
 """
 
-from datetime import datetime
-import time
 import multiprocessing as mp
 import queue
+import time
+from datetime import datetime
 
-from scipy import ndimage as ndi
 import numpy as np
+from scipy import ndimage as ndi
 
 
 class DataSimulator(mp.Process):
@@ -26,35 +26,35 @@ class DataSimulator(mp.Process):
         self._running = True
 
         while self._running:
-            shape = self._data_shape \
-                if self._data_shape is not None else (2, 256, 256)
+            shape = self._data_shape if self._data_shape is not None else (2, 256, 256)
 
             choices = ["circles", "squares"]
             choice = np.random.choice(choices)
-            background =  2. * np.random.rand(*shape)
+            background = 2.0 * np.random.rand(*shape)
             if choice == "circles":
                 # Random image data emulating rings
                 x = np.linspace(-1, 1, shape[-2])
                 y = np.linspace(-1, 1, shape[-1])
                 xx, yy = np.meshgrid(x, y)
-                z = 10. * np.sin(
-                    np.random.randint(1, 20) * np.pi * (xx**2 + yy**2))
+                z = 10.0 * np.sin(
+                    np.random.randint(1, 20) * np.pi * (xx ** 2 + yy ** 2)
+                )
             else:
                 z = np.zeros(shape[1:])
                 x = np.random.randint(10, 128)
-                z[x:-x, x:-x] = 10.
+                z[x:-x, x:-x] = 10.0
 
                 z = ndi.rotate(
-                    z, np.random.randint(10, 45),
-                    mode='constant', reshape=False)
+                    z, np.random.randint(10, 45), mode="constant", reshape=False
+                )
 
-            data = {'image': background + z}
-            meta = {'timestamp': datetime.now().strftime("%H:%M:%S")}
+            data = {"image": background + z}
+            meta = {"timestamp": datetime.now().strftime("%H:%M:%S")}
 
             payload = (meta, data)
             try:
                 self._sim_queue.put_nowait(payload)
-                time.sleep(.1)
+                time.sleep(0.1)
             except queue.Full:
                 continue
 
