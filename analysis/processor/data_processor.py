@@ -10,8 +10,8 @@ import queue
 
 import numpy as np
 
-from .azimuthal_integration import ImageIntegrator
-from .canny_edge import EdgeDetection
+from analysis.processor.azimuthal_integration import ImageIntegrator
+from analysis.processor.canny_edge import EdgeDetection
 
 
 class DataProcessor(mp.Process):
