@@ -91,6 +91,9 @@ class DataProcessor(mp.Process):
         edges = self.edge_detector.find_edges(image)
         return np.mean(image, axis=0), mom, intensities, edges
 
+    def terminate(self):
+        self._running = False
+
 
 class IntegratedData:
     def __init__(self, timestamp):

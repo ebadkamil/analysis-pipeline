@@ -4,92 +4,65 @@ Analysis and visualization software
 Author: Ebad Kamil <ebad.kamil@xfel.eu>
 All rights reserved.
 """
-
 import argparse
 import multiprocessing as mp
 import os
 import queue
 import sys
 import time
+from getpass import getuser
 
 import redis
 from compose.cli.main import TopLevelCommand, project_from_options
 
+from analysis.config import command_docker_options
 from analysis.processor.data_processor import DataProcessor
 from analysis.processor.data_simulator import DataSimulator
 from analysis.redisdb import get_redis_client
 from analysis.webgui.app import DashApp
 from analysis.zmq_streamer.data_streamer import DataClient, DataStreamer
 
-common_options = {
-    "--no-deps": False,
-    "--always-recreate-deps": False,
-    "--scale": "",
-    "--abort-on-container-exit": False,
-    "SERVICE": "",
-    "--remove-orphans": False,
-    "--no-recreate": True,
-    "--force-recreate": False,
-    "--no-build": False,
-    "--no-color": False,
-    "--rmi": "none",
-    "--volumes": True,  # Remove volumes when docker-compose down (don't persist kafka and zk data)
-    "--follow": False,
-    "--timestamps": False,
-    "--tail": "all",
-    "--detach": True,
-    "--build": False,
-    "--no-log-prefix": False,
-}
 
-
-def run_containers(cmd, options):
-    print("Running docker-compose up", flush=True)
+def run_redis_container(cmd, options):
+    print("Starting redis container ...", flush=True)
     cmd.up(options)
-    print("\nFinished docker-compose up\n", flush=True)
 
 
-def build_and_run(options, request=None, config_file=None, log_file=None):
+def build_and_run():
+    options = command_docker_options
+    options["--project-name"] = "analysis-pipeline"
+    options["--file"] = ["compose/docker-compose-redis.yml"]
     project = project_from_options(os.path.dirname(os.path.dirname(__file__)), options)
     cmd = TopLevelCommand(project)
-    run_containers(cmd, options)
+    run_redis_container(cmd, options)
+    return cmd, options
 
 
-def start_redis_server(host="127.0.0.1", port=6379, *, password=None):
-    # command = [
-    #     "/home/xfeluser/extra-analysis/thirdparty/bin/redis-server",
-    #     "--port",
-    #     str(port),
-    # ]
+def start_redis_server():
+    cmd, options = build_and_run()
 
-    # process = subprocess.Popen(command)
-
-    options = common_options
-    options["--project-name"] = "lr"
-    options["--file"] = ["compose/docker-compose-redis.yml"]
-
-    build_and_run(options)
-    client = redis.Redis(host=host, port=port)
+    client = redis.Redis(host="127.0.0.1", port=6379)
+    is_redis_up = False
     for i in range(5):
         try:
-            var = client.ping()
-            print(f"Attempt {i+1} to connect to redis succeeded:", var)
+            client.ping()
+            is_redis_up = True
+            print(f"Attempt {i+1} to connect to redis succeeded:")
         except Exception:
             time.sleep(2)
         else:
             break
 
-    # if process.poll() is None:
-    #     print("Redis process is running...")
-    # else:
-    #     print("Redis was terminated ...")
+    return is_redis_up, cmd, options
 
 
 class Application:
-    def __init__(
-        self, hostname, port, *, redis_host="127.0.0.1", redis_port=6379, password=None
-    ):
-        start_redis_server()
+    def __init__(self, hostname, port):
+        is_redis_up, self.docker_command, self.docker_options = start_redis_server()
+
+        if not is_redis_up:
+            self.docker_command.down(self.docker_options)
+            sys.exit(1)
 
         # raw container (mp.Queue) where data from DataSimulator is fed
         raw_queue = mp.Queue(maxsize=1)
@@ -128,6 +101,16 @@ class Application:
             except (queue.Empty, queue.Full):
                 continue
 
+    def stop_app(self):
+        self.docker_command.down(self.docker_options)
+        self.data_streamer.stop()
+        if self.data_streamer and self.data_streamer.is_alive():
+            self.data_streamer.join()
+        if self.data_simulator and self.data_simulator.is_alive():
+            self.data_simulator.join()
+        if self.data_processor and self.data_processor.is_alive():
+            self.data_processor.join()
+
 
 def start_pipeline():
     parser = argparse.ArgumentParser(prog="extra analysis")
@@ -140,15 +123,13 @@ def start_pipeline():
     host = args.hostname
     port = args.port
 
-    redis_host = args.redis_host
-    # redis_port = args.redis_port
-
-    if redis_host and redis_host not in ["localhost", "127.0.0.1"]:
-        print("Cannot connect to remote host")
-        sys.exit(1)
-
     app = Application(host, port)
-    app.start_app()
+    try:
+        app.start_app()
+    except KeyboardInterrupt:
+        print(f"Interrupted by user: {getuser()}. Closing consumers ...")
+    finally:
+        app.stop_app()
 
 
 def start_test_client():

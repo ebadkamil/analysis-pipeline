@@ -12,3 +12,25 @@ config = dict(
     hostname="127.0.0.1",
     TIME_OUT=1.0,
 )
+
+
+command_docker_options = {
+    "--no-deps": False,
+    "--always-recreate-deps": False,
+    "--scale": "",
+    "--abort-on-container-exit": False,
+    "SERVICE": "",
+    "--remove-orphans": False,
+    "--no-recreate": True,
+    "--force-recreate": False,
+    "--no-build": False,
+    "--no-color": False,
+    "--rmi": "none",
+    "--volumes": True,  # Remove volumes when docker-compose down (don't persist kafka and zk data)
+    "--follow": False,
+    "--timestamps": False,
+    "--tail": "all",
+    "--detach": True,
+    "--build": False,
+    "--no-log-prefix": False,
+}

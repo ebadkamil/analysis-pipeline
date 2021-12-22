@@ -23,10 +23,11 @@ class DataStreamer(Thread):
         self._socket.bind(endpoint)
 
         self._buffer = buffer
+        self._running = True
 
     def run(self):
         try:
-            while True:
+            while self._running:
                 req = self._socket.recv()
                 if req == b"next":
                     try:
@@ -41,6 +42,9 @@ class DataStreamer(Thread):
         finally:
             self._socket.setsockopt(zmq.LINGER, 0)
             self._socket.close()
+
+    def stop(self):
+        self._running = False
 
 
 class DataClient:

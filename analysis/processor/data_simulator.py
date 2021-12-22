@@ -54,7 +54,7 @@ class DataSimulator(mp.Process):
             payload = (meta, data)
             try:
                 self._sim_queue.put_nowait(payload)
-                time.sleep(0.1)
+                time.sleep(1)
             except queue.Full:
                 continue
 
